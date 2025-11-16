@@ -8,7 +8,7 @@ import { downloadGTFS, extractGTFS } from "./gtfsService.js";
 
 const app = express();
 app.use(cors());
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 46039;
 
 let cachedShapes = null;
 
