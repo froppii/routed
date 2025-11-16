@@ -69,7 +69,6 @@ app.get('/api/shapes_merged', (req, res) => {
       routeShapes[route_id].push(coords); // add as a separate line
     }
 
-    // Build GeoJSON
     const features = Object.entries(routeShapes).map(([routeId, lines]) => ({
       type: "Feature",
       properties: { route_id: routeId },
