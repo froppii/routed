@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "papaparse": "^5.5.3"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  }
+}
