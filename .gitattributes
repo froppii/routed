@@ -1,0 +1,2 @@
+*.json filter=lfs diff=lfs merge=lfs -text
+shapes.json filter=lfs diff=lfs merge=lfs -text

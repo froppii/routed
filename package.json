@@ -1,8 +1,3 @@
-{
-  "devDependencies": {
-    "papaparse": "^5.5.3"
-  },
-  "dependencies": {
-    "adm-zip": "^0.5.16"
-  }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:4fb82b9de02723ad28faa690c68dcde7d35da5dcc36e09bf6ec4b59b94a03c50
+size 107

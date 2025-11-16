@@ -2,8 +2,6 @@ import { useState } from 'react'
 import Map from './Map';
 
 function App() {
-  const [view, setView] = useState<'map' | 'wallet'> ('map');
-
   const feedUrls = [
     'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace',
     'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm',
