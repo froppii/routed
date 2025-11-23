@@ -40,7 +40,7 @@ export default function Map() {
   // Load shapes once
   useEffect(() => {
     setLoadingShapes(true);
-    fetch('http://localhost:3001/api/shapes_merged')
+    fetch('http://localhost:46039/api/shapes_merged')
       .then(res => {
         if (!res.ok) throw new Error(`Shapes API HTTP ${res.status}`);
         return res.json();
@@ -54,7 +54,7 @@ export default function Map() {
   useEffect(() => {
     const fetchVehicles = () => {
       setLoadingVehicles(true);
-      fetch('http://localhost:3001/api/vehicles')
+      fetch('http://localhost:46039/api/vehicles')
         .then(res => {
           if (!res.ok) throw new Error(`Vehicles API HTTP ${res.status}`);
           return res.json();
