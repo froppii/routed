@@ -63,7 +63,7 @@ export default function Map() {
           if (!res.ok) throw new Error(`Vehicles API HTTP ${res.status}`);
           return res.json();
         })
-        .then(data => setVehicles(data))
+        .then(data => setVehicles(data.vehicles || data))
         .catch(err => setError(err.message))
         .finally(() => setLoadingVehicles(false));
     };
