@@ -57,13 +57,16 @@ function buildShapesCache() {
       y: Number(p.shape_pt_lat),
     }));
 
-    // Simplify with tolerance 0.0005 degrees (~50m)
-    const simplifiedPts = simplify(pts, 0.0005, true);
+    // Use a smaller tolerance and fall back to the original if simplification is too aggressive
+    const simplifiedPts = simplify(pts, 0.0001, true);
 
-    // Convert back to [lon, lat] arrays
-    const simplifiedCoords = simplifiedPts.map(pt => [
-      Number(pt.x.toFixed(5)),
-      Number(pt.y.toFixed(5)),
+    // If simplify removed nearly everything, keep the original points
+    const finalPts = simplifiedPts.length >= Math.max(2, Math.floor(pts.length * 0.05)) ? simplifiedPts : pts;
+
+    // Convert back to [lon, lat] arrays without low-precision rounding
+    const simplifiedCoords = finalPts.map(pt => [
+      Number(pt.x),
+      Number(pt.y),
     ]);
 
     routeDirShapes[route_id][dir].push(simplifiedCoords);

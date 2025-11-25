@@ -27,7 +27,8 @@ type Vehicle = {
 type ShapeFeature = {
   type: string;
   properties: { route_id: string };
-  geometry: { type: string; coordinates: [number, number][] };
+  // backend returns MultiLineString (array of lines) or LineString
+  geometry: { type: string; coordinates: number[][][] | number[][] };
 };
 
 export default function Map() {
@@ -99,14 +100,16 @@ export default function Map() {
     fetchVehicles();
     const interval = setInterval(fetchVehicles, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [BACKEND_URL]);
 
-  const getColorFor = (id?: string) => {
-    if (!id) return '#666';
-    let h = 0;
-    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
-    return `hsl(${h} 80% 40%)`;
-  };
+  const getColorFor = useMemo(() => {
+    return (id?: string) => {
+      if (!id) return '#666';
+      let h = 0;
+      for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
+      return `hsl(${h} 80% 40%)`;
+    };
+  }, []);
 
   // Show loading indicator until shapes are loaded or if there is an error
   const showIndicator = loadingShapes || loadingVehicles || error;
@@ -136,10 +139,13 @@ export default function Map() {
 
         {useMemo(() => shapes.map((f, i) => {
           const coords = f.geometry.coordinates;
-          const positions = Array.isArray(coords[0]?.[0]) 
-            ? coords.flat().map((c: any) => [c[1], c[0]])
-            : coords.map((c: any) => [c[1], c[0]]);
-          
+          // normalize to flat array of [lon, lat] points
+          const points: number[][] = Array.isArray(coords[0]?.[0])
+            ? (coords as number[][][]).flat()
+            : (coords as number[][]);
+
+          const positions = points.map((c: number[]) => [c[1], c[0]]); // [lat, lon]
+
           return (
             <Polyline
               key={i}
@@ -147,7 +153,7 @@ export default function Map() {
               pathOptions={{ color: getColorFor(f.properties.route_id), weight: 4, opacity: 0.8 }}
             />
           );
-        }), [shapes])}
+        }), [shapes, getColorFor])}
 
         {vehicles.map(v => (
           <Marker key={v.id} position={[v.lat, v.lon]}>
