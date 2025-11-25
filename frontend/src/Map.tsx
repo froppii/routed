@@ -1,7 +1,7 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -43,12 +43,19 @@ export default function Map() {
   useEffect(() => {
     setLoadingShapes(true);
     const base = BACKEND_URL.replace(/\/$/, '');
+    console.time('shapes-fetch');
     fetch(`${base}/api/shapes_merged`)
       .then(res => {
+        console.timeEnd('shapes-fetch');
         if (!res.ok) throw new Error(`Shapes API HTTP ${res.status}`);
         return res.json();
       })
-      .then(data => setShapes(data.features))
+      .then(data => {
+        console.time('shapes-parse');
+        setShapes(data.features || []);
+        console.timeEnd('shapes-parse');
+        console.log(`Loaded ${(data.features || []).length} shapes`);
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoadingShapes(false));
   }, []);
@@ -106,9 +113,8 @@ export default function Map() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {shapes.map((f, i) => {
+        {useMemo(() => shapes.map((f, i) => {
           const coords = f.geometry.coordinates;
-          // Handle both 2D and 3D coordinate arrays
           const positions = Array.isArray(coords[0]?.[0]) 
             ? coords.flat().map((c: any) => [c[1], c[0]])
             : coords.map((c: any) => [c[1], c[0]]);
@@ -120,7 +126,7 @@ export default function Map() {
               pathOptions={{ color: getColorFor(f.properties.route_id), weight: 4, opacity: 0.8 }}
             />
           );
-        })}
+        }), [shapes])}
 
         {vehicles.map(v => (
           <Marker key={v.id} position={[v.lat, v.lon]}>
