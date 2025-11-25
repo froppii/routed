@@ -45,15 +45,15 @@ export default function Map() {
     const base = BACKEND_URL.replace(/\/$/, '');
     console.time('shapes-fetch');
     fetch(`${base}/api/shapes_merged`)
-      .then(res => {
+      .then((res: Response) => {
         console.timeEnd('shapes-fetch');
         if (!res.ok) throw new Error(`Shapes API HTTP ${res.status}`);
-        return res.json();
+        return res.json() as Promise<{ features: ShapeFeature[] }>;
       })
-      .then(data => {
+      .then((data) => {
         console.time('shapes-parse');
         // Deduplicate shapes by route_id to reduce rendering load
-        const unique = new Map<string, ShapeFeature>();
+        const unique = new globalThis.Map<string, ShapeFeature>();
         (data.features || []).forEach((f: ShapeFeature) => {
           if (!unique.has(f.properties.route_id)) {
             unique.set(f.properties.route_id, f);
@@ -66,7 +66,7 @@ export default function Map() {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoadingShapes(false));
-  }, []);
+  }, [BACKEND_URL]);
 
   // Fetch vehicles every 5 seconds
   useEffect(() => {
