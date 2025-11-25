@@ -53,30 +53,17 @@ export default function Map() {
       })
       .then((data) => {
         console.time('shapes-parse');
-        // Keep only ONE shape per route (already done on backend, but dedupe again)
-        const unique = new globalThis.Map<string, ShapeFeature>();
+        // Deduplicate shapes by route_id (do not re-simplify on the frontend)
+        const unique: Record<string, ShapeFeature> = {};
         (data.features || []).forEach((f: ShapeFeature) => {
-          if (!unique.has(f.properties.route_id)) {
-            unique.set(f.properties.route_id, f);
-          }
+          const id = f.properties.route_id;
+          if (!Object.prototype.hasOwnProperty.call(unique, id)) unique[id] = f;
         });
-        
-        // Simplify coordinates: keep every Nth point to reduce rendering load
-        const simplified = Array.from(unique.values()).map(f => ({
-          ...f,
-          geometry: {
-            ...f.geometry,
-            coordinates: Array.isArray(f.geometry.coordinates[0]?.[0])
-              ? (f.geometry.coordinates as any).map((line: any) => 
-                  line.filter((_: any, i: number) => i % 5 === 0) // Keep every 5th point
-                )
-              : (f.geometry.coordinates as any).filter((_: any, i: number) => i % 5 === 0),
-          },
-        }));
-        
-        setShapes(simplified);
+
+        const deduped = Object.values(unique);
+        setShapes(deduped);
         console.timeEnd('shapes-parse');
-        console.log(`Loaded ${(data.features || []).length} shapes, rendering ${simplified.length} simplified routes`);
+        console.log(`Loaded ${(data.features || []).length} shapes, rendering ${deduped.length} routes`);
       })
       .catch(err => setError(err.message))
       .finally(() => setLoadingShapes(false));
@@ -101,7 +88,7 @@ export default function Map() {
     const interval = setInterval(fetchVehicles, 5000);
     return () => clearInterval(interval);
   }, [BACKEND_URL]);
-
+ 
   const getColorFor = useMemo(() => {
     return (id?: string) => {
       if (!id) return '#666';
@@ -110,10 +97,10 @@ export default function Map() {
       return `hsl(${h} 80% 40%)`;
     };
   }, []);
-
-  // Show loading indicator until shapes are loaded or if there is an error
+ 
+   // Show loading indicator until shapes are loaded or if there is an error
   const showIndicator = loadingShapes || loadingVehicles || error;
-
+ 
   return (
     <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', zIndex: 9999 }}>
       {showIndicator && (
@@ -137,36 +124,47 @@ export default function Map() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {useMemo(() => shapes.map((f, i) => {
+        {useMemo(() => shapes.flatMap((f, i) => {
+          const color = getColorFor(f.properties.route_id);
           const coords = f.geometry.coordinates;
-          // normalize to flat array of [lon, lat] points
-          const points: number[][] = Array.isArray(coords[0]?.[0])
-            ? (coords as number[][][]).flat()
-            : (coords as number[][]);
 
-          const positions = points.map((c: number[]) => [c[1], c[0]]); // [lat, lon]
+          // If geometry is MultiLineString, render each line separately to avoid connecting disconnected segments
+          if (Array.isArray(coords[0]?.[0])) {
+            return (coords as number[][][]).map((line, j) => {
+              const positions = line.map((c: number[]) => [c[1], c[0]] as [number, number]);
+              return (
+                <Polyline
+                  key={`${i}-${j}`}
+                  positions={positions}
+                  pathOptions={{ color, weight: 4, opacity: 0.8 }}
+                />
+              );
+            });
+          }
 
-          return (
+          // Single LineString
+          const positions = (coords as number[][]).map((c: number[]) => [c[1], c[0]] as [number, number]);
+          return [
             <Polyline
               key={i}
               positions={positions}
-              pathOptions={{ color: getColorFor(f.properties.route_id), weight: 4, opacity: 0.8 }}
+              pathOptions={{ color, weight: 4, opacity: 0.8 }}
             />
-          );
+         ];
         }), [shapes, getColorFor])}
 
-        {vehicles.map(v => (
-          <Marker key={v.id} position={[v.lat, v.lon]}>
-            <Popup>
-              <div>
-                <div><strong>Route:</strong> {v.routeId}</div>
-                <div><strong>Trip:</strong> {v.tripId}</div>
-                <div><strong>Time:</strong> {v.timestamp ? new Date(v.timestamp * 1000).toLocaleTimeString() : 'n/a'}</div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
-  );
+         {vehicles.map(v => (
+           <Marker key={v.id} position={[v.lat, v.lon]}>
+             <Popup>
+               <div>
+                 <div><strong>Route:</strong> {v.routeId}</div>
+                 <div><strong>Trip:</strong> {v.tripId}</div>
+                 <div><strong>Time:</strong> {v.timestamp ? new Date(v.timestamp * 1000).toLocaleTimeString() : 'n/a'}</div>
+               </div>
+             </Popup>
+           </Marker>
+         ))}
+       </MapContainer>
+     </div>
+   );
 }
