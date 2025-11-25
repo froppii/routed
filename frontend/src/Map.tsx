@@ -37,10 +37,13 @@ export default function Map() {
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) || 'http://localhost:46039';
+
   // Load shapes once
   useEffect(() => {
     setLoadingShapes(true);
-    fetch('http://localhost:46039/api/shapes_merged')
+    const base = BACKEND_URL.replace(/\/$/, '');
+    fetch(`${base}/api/shapes_merged`)
       .then(res => {
         if (!res.ok) throw new Error(`Shapes API HTTP ${res.status}`);
         return res.json();
@@ -54,7 +57,8 @@ export default function Map() {
   useEffect(() => {
     const fetchVehicles = () => {
       setLoadingVehicles(true);
-      fetch('http://localhost:46039/api/vehicles')
+      const base = BACKEND_URL.replace(/\/$/, '');
+      fetch(`${base}/api/vehicles`)
         .then(res => {
           if (!res.ok) throw new Error(`Vehicles API HTTP ${res.status}`);
           return res.json();
