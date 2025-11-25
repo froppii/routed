@@ -106,13 +106,21 @@ export default function Map() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {shapes.map((f, i) => (
-          <Polyline
-            key={i}
-            positions={f.geometry.coordinates.map(c => [c[1], c[0]])}
-            pathOptions={{ color: getColorFor(f.properties.route_id), weight: 4, opacity: 0.8 }}
-          />
-        ))}
+        {shapes.map((f, i) => {
+          const coords = f.geometry.coordinates;
+          // Handle both 2D and 3D coordinate arrays
+          const positions = Array.isArray(coords[0]?.[0]) 
+            ? coords.flat().map((c: any) => [c[1], c[0]])
+            : coords.map((c: any) => [c[1], c[0]]);
+          
+          return (
+            <Polyline
+              key={i}
+              positions={positions}
+              pathOptions={{ color: getColorFor(f.properties.route_id), weight: 4, opacity: 0.8 }}
+            />
+          );
+        })}
 
         {vehicles.map(v => (
           <Marker key={v.id} position={[v.lat, v.lon]}>
