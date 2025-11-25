@@ -60,8 +60,6 @@ function buildShapesCache() {
     // Simplify with tolerance 0.0005 degrees (~50m)
     const simplifiedPts = simplify(pts, 0.0005, true);
 
-    console.log(`Shape ${shape_id}: ${pts.length} pts → ${simplifiedPts.length} pts (${Math.round(100 * simplifiedPts.length / pts.length)}%)`);
-
     // Convert back to [lon, lat] arrays
     const simplifiedCoords = simplifiedPts.map(pt => [
       Number(pt.x.toFixed(5)),
@@ -101,10 +99,9 @@ function buildShapesCache() {
 app.get("/api/shapes_merged", (req, res) => {
   if (!cachedShapes) return res.status(500).json({ error: "Shapes not loaded" });
 
-  // Prevent downstream caches / CDNs from serving stale content while you debug
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
+  // Allow caching for clients/CDN but keep ETag support for validation
+  res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=86400");
+  // Express will still emit ETag; clients/CDN can validate and revalidate as needed
 
   return res.json(cachedShapes);
 });
