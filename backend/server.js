@@ -34,6 +34,7 @@ function buildShapesCache() {
   }
 
   const routeDirShapes = {};
+  const processedShapeKeys = new Set();
 
   for (const trip of trips) {
     const { route_id, shape_id, direction_id } = trip;
@@ -45,13 +46,27 @@ function buildShapesCache() {
     if (!routeDirShapes[route_id]) routeDirShapes[route_id] = {};
     if (!routeDirShapes[route_id][dir]) routeDirShapes[route_id][dir] = [];
 
-    const coords = shapesById[shape_id].map(p => [
-      Number(p.shape_pt_lon),
-      Number(p.shape_pt_lat),
+    // Skip duplicate shapes for the same route+direction
+    const processedKey = `${route_id}|${dir}|${shape_id}`;
+    if (processedShapeKeys.has(processedKey)) continue;
+    processedShapeKeys.add(processedKey);
+
+    // Convert to {x, y} format for simplify-js
+    const pts = shapesById[shape_id].map(p => ({
+      x: Number(p.shape_pt_lon),
+      y: Number(p.shape_pt_lat),
+    }));
+
+    // Simplify with tolerance 0.0002 degrees (~20m)
+    const simplifiedPts = simplify(pts, 0.0002, true);
+
+    // Convert back to [lon, lat] arrays
+    const simplifiedCoords = simplifiedPts.map(pt => [
+      Number(pt.x.toFixed(5)),
+      Number(pt.y.toFixed(5)),
     ]);
 
-    const simplified = simplify(coords, 0.00005, true);
-    routeDirShapes[route_id][dir].push(simplified);
+    routeDirShapes[route_id][dir].push(simplifiedCoords);
   }
 
   // Build GeoJSON
