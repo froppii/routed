@@ -1,12 +1,14 @@
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
+import compression from "compression";
 import gtfsRealtimeBindings from "gtfs-realtime-bindings";
 
 import { readGTFSFile } from "./gtfsParser.js";
 import { downloadGTFS, extractGTFS } from "./gtfsService.js";
 
 const app = express();
+app.use(compression());
 app.use(cors());
 const PORT = process.env.PORT || 46039;
 

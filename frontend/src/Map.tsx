@@ -52,9 +52,17 @@ export default function Map() {
       })
       .then(data => {
         console.time('shapes-parse');
-        setShapes(data.features || []);
+        // Deduplicate shapes by route_id to reduce rendering load
+        const unique = new Map<string, ShapeFeature>();
+        (data.features || []).forEach((f: ShapeFeature) => {
+          if (!unique.has(f.properties.route_id)) {
+            unique.set(f.properties.route_id, f);
+          }
+        });
+        const uniqueShapes = Array.from(unique.values());
+        setShapes(uniqueShapes);
         console.timeEnd('shapes-parse');
-        console.log(`Loaded ${(data.features || []).length} shapes`);
+        console.log(`Loaded ${(data.features || []).length} shapes, rendering ${uniqueShapes.length} unique routes`);
       })
       .catch(err => setError(err.message))
       .finally(() => setLoadingShapes(false));
