@@ -83,7 +83,13 @@ function buildShapesCache() {
 
 app.get("/api/shapes_merged", (req, res) => {
   if (!cachedShapes) return res.status(500).json({ error: "Shapes not loaded" });
-  res.json(cachedShapes);
+
+  // Prevent downstream caches / CDNs from serving stale content while you debug
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+
+  return res.json(cachedShapes);
 });
 
 
