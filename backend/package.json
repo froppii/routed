@@ -17,6 +17,7 @@
     "express": "^5.1.0",
     "gtfs-realtime-bindings": "^1.1.1",
     "node-fetch": "^3.3.2",
-    "papaparse": "^5.5.3"
+    "papaparse": "^5.5.3",
+    "simplify-js": "^1.2.4"
   }
 }

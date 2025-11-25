@@ -52,17 +52,30 @@ export default function Map() {
       })
       .then((data) => {
         console.time('shapes-parse');
-        // Deduplicate shapes by route_id to reduce rendering load
+        // Keep only ONE shape per route (already done on backend, but dedupe again)
         const unique = new globalThis.Map<string, ShapeFeature>();
         (data.features || []).forEach((f: ShapeFeature) => {
           if (!unique.has(f.properties.route_id)) {
             unique.set(f.properties.route_id, f);
           }
         });
-        const uniqueShapes = Array.from(unique.values());
-        setShapes(uniqueShapes);
+        
+        // Simplify coordinates: keep every Nth point to reduce rendering load
+        const simplified = Array.from(unique.values()).map(f => ({
+          ...f,
+          geometry: {
+            ...f.geometry,
+            coordinates: Array.isArray(f.geometry.coordinates[0]?.[0])
+              ? (f.geometry.coordinates as any).map((line: any) => 
+                  line.filter((_: any, i: number) => i % 5 === 0) // Keep every 5th point
+                )
+              : (f.geometry.coordinates as any).filter((_: any, i: number) => i % 5 === 0),
+          },
+        }));
+        
+        setShapes(simplified);
         console.timeEnd('shapes-parse');
-        console.log(`Loaded ${(data.features || []).length} shapes, rendering ${uniqueShapes.length} unique routes`);
+        console.log(`Loaded ${(data.features || []).length} shapes, rendering ${simplified.length} simplified routes`);
       })
       .catch(err => setError(err.message))
       .finally(() => setLoadingShapes(false));

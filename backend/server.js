@@ -3,6 +3,7 @@ import cors from "cors";
 import fetch from "node-fetch";
 import compression from "compression";
 import gtfsRealtimeBindings from "gtfs-realtime-bindings";
+import simplify from 'simplify-js';
 
 import { readGTFSFile } from "./gtfsParser.js";
 import { downloadGTFS, extractGTFS } from "./gtfsService.js";
@@ -49,7 +50,8 @@ function buildShapesCache() {
       Number(p.shape_pt_lat),
     ]);
 
-    routeDirShapes[route_id][dir].push(coords);
+    const simplified = simplify(coords, 0.00005, true);
+    routeDirShapes[route_id][dir].push(simplified);
   }
 
   // Build GeoJSON
