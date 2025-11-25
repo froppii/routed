@@ -57,8 +57,8 @@ function buildShapesCache() {
       y: Number(p.shape_pt_lat),
     }));
 
-    // Simplify with tolerance 0.0002 degrees (~20m)
-    const simplifiedPts = simplify(pts, 0.0002, true);
+    // Simplify with tolerance 0.0005 degrees (~50m) — increase if still large
+    const simplifiedPts = simplify(pts, 0.0005, true);
 
     // Convert back to [lon, lat] arrays
     const simplifiedCoords = simplifiedPts.map(pt => [
